@@ -1,0 +1,116 @@
+{
+  "package_version": "0.1.0",
+  "trained_at": "2026-09-08T19:06:25.643916+00:00",
+  "git_sha": "0d8ad9b",
+  "training_data": "data/training_dataset.csv",
+  "training_data_sha256": "712c6068d89d0321",
+  "n_train": 2000,
+  "seed": 42,
+  "n_folds": 5,
+  "exclude_internal_scores": false,
+  "costs": {
+    "false_negative": 5.0,
+    "false_positive": 1.0
+  },
+  "min_severe_recall": 0.95,
+  "lgbm_params": {
+    "objective": "multiclass",
+    "n_estimators": 600,
+    "learning_rate": 0.03,
+    "num_leaves": 15,
+    "min_child_samples": 20,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0,
+    "class_weight": "balanced",
+    "n_jobs": 1,
+    "verbose": -1
+  },
+  "python": "3.11.15",
+  "sklearn": "1.9.0",
+  "lightgbm": "4.7.0",
+  "data_quality": {
+    "n_rows": 2000,
+    "missing_columns": [],
+    "unexpected_columns": [],
+    "out_of_range": {
+      "AdditionalCostsGBP": 2,
+      "CaseComplexityScore": 2,
+      "DelayInResolutionDays": 2,
+      "DirectFinancialLossGBP": 2,
+      "DurationAffectedDays": 2,
+      "EstimatedImpactScore": 2,
+      "EstimatedRiskScore": 2,
+      "ExpectedFinancialRedressGBP": 2,
+      "LostIncomeGBP": 2,
+      "NumberOfDependentsAffected": 2,
+      "NumberOfOrganisationsInvolved": 2,
+      "NumberOfServiceFailures": 2,
+      "PriorComplaintsRaised": 2,
+      "RecoveryTimeMonths": 2,
+      "RepeatFailuresCount": 2
+    },
+    "invalid_categories": {},
+    "invalid_booleans": {},
+    "structural_none_filled": {
+      "PhysicalImpactLevel": 336,
+      "VulnerabilityLevel": 404,
+      "PrimaryVulnerability": 505,
+      "FailureTypeSecondary": 925
+    },
+    "jurisdiction_inferred": 110,
+    "duplicate_references": 0,
+    "missing_after_cleaning": {
+      "AdditionalCostsGBP": 38,
+      "CaseComplexityScore": 2,
+      "DelayInResolutionDays": 2,
+      "DirectFinancialLossGBP": 2,
+      "DurationAffectedDays": 2,
+      "EmotionalImpactLevel": 36,
+      "EstimatedImpactScore": 33,
+      "EstimatedRiskScore": 2,
+      "EvidenceStrength": 58,
+      "ExpectedFinancialRedressGBP": 58,
+      "Jurisdiction": 2,
+      "LostIncomeGBP": 2,
+      "NumberOfDependentsAffected": 2,
+      "NumberOfOrganisationsInvolved": 2,
+      "NumberOfServiceFailures": 2,
+      "OrganisationType": 38,
+      "PriorComplaintsRaised": 2,
+      "RecoveryTimeMonths": 56,
+      "RepeatFailuresCount": 2,
+      "ServiceArea": 30
+    },
+    "dropped_columns": [
+      "OmbudsmanInvestigationRequired"
+    ]
+  },
+  "cv_metrics": {
+    "score": {
+      "accuracy": 0.779,
+      "within_one_accuracy": 0.9965,
+      "macro_f1": 0.7784172983721006,
+      "mae": 0.2245,
+      "quadratic_weighted_kappa": 0.9482836077802006,
+      "under_prediction_rate": 0.0845,
+      "over_prediction_rate": 0.1365
+    },
+    "triage": {
+      "true_positive": 587,
+      "false_negative": 14,
+      "false_positive": 115,
+      "true_negative": 1284,
+      "severe_recall": 0.9767054908485857,
+      "severe_precision": 0.8361823361823362,
+      "specificity": 0.9177984274481773,
+      "progress_rate": 0.351,
+      "missed_severe_rate": 0.007,
+      "expected_cost_per_case": 0.0925
+    },
+    "probability": {
+      "severe_auroc": 0.9902628333287743
+    }
+  }
+}

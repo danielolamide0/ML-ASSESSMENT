@@ -1,0 +1,20 @@
+# Core (versions used to produce the committed model, metrics and predictions)
+pandas==3.0.5
+numpy==2.4.6
+scikit-learn==1.9.0
+lightgbm==4.7.0
+shap==0.51.0
+scipy==1.17.1
+joblib==1.6.0
+openpyxl==3.1.5
+
+# Analysis notebook
+matplotlib==3.11.1
+seaborn==0.13.2
+jupyter
+nbconvert==7.17.1
+nbformat==5.11.1
+ipykernel==7.3.0
+
+# Tests
+pytest==9.1.1
