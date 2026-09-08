@@ -1,7 +1,7 @@
 {
   "package_version": "0.1.0",
-  "trained_at": "2026-09-08T21:59:17.574910+00:00",
-  "git_sha": "a051cec-dirty",
+  "trained_at": "2026-09-08T22:04:37.342451+00:00",
+  "git_sha": "fb860a7",
   "training_data": "data/training_dataset.csv",
   "training_data_sha256": "712c6068d89d0321",
   "n_train": 2000,
