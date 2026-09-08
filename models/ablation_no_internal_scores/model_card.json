@@ -1,7 +1,7 @@
 {
   "package_version": "0.1.0",
-  "trained_at": "2026-09-08T18:57:26.037510+00:00",
-  "git_sha": "0d8ad9b",
+  "trained_at": "2026-09-08T21:59:43.643718+00:00",
+  "git_sha": "a051cec-dirty",
   "training_data": "data/training_dataset.csv",
   "training_data_sha256": "712c6068d89d0321",
   "n_train": 2000,
@@ -89,28 +89,28 @@
   },
   "cv_metrics": {
     "score": {
-      "accuracy": 0.4305,
-      "within_one_accuracy": 0.8125,
-      "macro_f1": 0.4131149163590649,
-      "mae": 0.797,
-      "quadratic_weighted_kappa": 0.7190788766302053,
-      "under_prediction_rate": 0.1855,
+      "accuracy": 0.426,
+      "within_one_accuracy": 0.8075,
+      "macro_f1": 0.4060083068009031,
+      "mae": 0.8085,
+      "quadratic_weighted_kappa": 0.7128144602906926,
+      "under_prediction_rate": 0.19,
       "over_prediction_rate": 0.384
     },
     "triage": {
-      "true_positive": 572,
-      "false_negative": 29,
-      "false_positive": 514,
-      "true_negative": 885,
-      "severe_recall": 0.9517470881863561,
-      "severe_precision": 0.5267034990791897,
-      "specificity": 0.6325947105075054,
-      "progress_rate": 0.543,
-      "missed_severe_rate": 0.0145,
-      "expected_cost_per_case": 0.3295
+      "true_positive": 571,
+      "false_negative": 30,
+      "false_positive": 513,
+      "true_negative": 886,
+      "severe_recall": 0.9500831946755408,
+      "severe_precision": 0.5267527675276753,
+      "specificity": 0.6333095067905646,
+      "progress_rate": 0.542,
+      "missed_severe_rate": 0.015,
+      "expected_cost_per_case": 0.3315
     },
     "probability": {
-      "severe_auroc": 0.9058574046829265
+      "severe_auroc": 0.9056635414647257
     }
   }
 }

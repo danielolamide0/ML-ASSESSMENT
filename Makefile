@@ -1,4 +1,4 @@
-.PHONY: install test train predict notebook all clean
+.PHONY: install test train train-ablation predict notebook all clean
 
 PY ?= python
 

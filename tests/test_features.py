@@ -47,3 +47,12 @@ def test_preprocessor_output_has_no_missing_and_stable_names(raw_train):
     X = pre.transform(df)
     assert not np.isnan(X).any()
     assert X.shape[1] == len(pre.get_feature_names_out())
+
+
+def test_one_hot_columns_are_fixed_by_dictionary(raw_train):
+    """Column set must not depend on which categories happen to be present in a training fold."""
+    df, _ = clean(raw_train, is_training=True)
+    full = build_preprocessor().fit(df)
+    small = build_preprocessor().fit(df.head(50))
+    assert list(full.get_feature_names_out()) == list(small.get_feature_names_out())
+    assert "Jurisdiction_Missing" in full.get_feature_names_out()

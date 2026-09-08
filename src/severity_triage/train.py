@@ -46,8 +46,11 @@ def cross_validate_proba(pipeline, X: pd.DataFrame, y: pd.Series, n_folds: int, 
 
 
 def _git_sha() -> str | None:
+    """Short SHA of HEAD, suffixed with '-dirty' if the working tree differs from it."""
     try:
-        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True, cwd=C.PROJECT_ROOT).strip()
+        sha = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True, cwd=C.PROJECT_ROOT).strip()
+        dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src", "pyproject.toml"], cwd=C.PROJECT_ROOT).returncode != 0
+        return f"{sha}-dirty" if dirty else sha
     except Exception:  # noqa: BLE001
         return None
 

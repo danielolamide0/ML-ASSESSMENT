@@ -29,7 +29,7 @@ PROGRESS_THRESHOLD_SCORE = 4
 
 # Columns that are only known *after* the severity decision has been made. They must never be
 # used as model inputs. OmbudsmanInvestigationRequired is a deterministic restatement of the
-# target (Yes <=> SeverityScore >= 4) and is entirely absent from the holdback data.
+# target (Yes <=> SeverityScore >= 4) and is present but 100% null in the holdback data.
 LEAKAGE_COLUMNS = ["OmbudsmanInvestigationRequired"]
 
 # Internal assessments produced during the initial review. They are strong predictors and are

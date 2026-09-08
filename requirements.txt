@@ -11,7 +11,7 @@ openpyxl==3.1.5
 # Analysis notebook
 matplotlib==3.11.1
 seaborn==0.13.2
-jupyter
+jupyter==1.1.1
 nbconvert==7.17.1
 nbformat==5.11.1
 ipykernel==7.3.0

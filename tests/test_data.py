@@ -59,3 +59,17 @@ def test_holdback_cleans_without_target(raw_holdback):
     df, _ = clean(raw_holdback, is_training=False)
     assert len(df) == len(raw_holdback)
     assert C.TARGET not in df.columns
+
+
+def test_duplicate_case_reference_raises(raw_holdback):
+    dup = pd.concat([raw_holdback.head(2), raw_holdback.head(1)])
+    with pytest.raises(ValueError, match="duplicate"):
+        clean(dup, is_training=False)
+
+
+def test_numeric_booleans_are_accepted(raw_holdback):
+    raw = raw_holdback.head(4).copy()
+    raw["AnxietyReported"] = [1.0, 0.0, 1, 0]
+    df, report = clean(raw, is_training=False)
+    assert "AnxietyReported" not in report.invalid_booleans
+    assert df["AnxietyReported"].tolist() == [True, False, True, False]

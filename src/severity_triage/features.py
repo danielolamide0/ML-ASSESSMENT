@@ -10,11 +10,14 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
+from sklearn.impute import MissingIndicator, SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from . import config as C
+from .data import NOMINAL_LEVELS
+
+MISSING_TOKEN = "Missing"
 
 ENGINEERED_NUMERIC = [
     "TotalFinancialLossGBP",
@@ -70,9 +73,10 @@ class FeatureEngineer(BaseEstimator, TransformerMixin):
         for col in C.BOOLEAN_COLUMNS:
             out[col] = df[col].astype("boolean").astype("Float64").astype("float64")
 
-        # Nominal categoricals passed through as strings for one-hot encoding
+        # Nominal categoricals as plain strings; a blank becomes an explicit "Missing" level so the
+        # one-hot encoder (which has a fixed category list from the data dictionary) can represent it.
         for col in C.NOMINAL_COLUMNS:
-            out[col] = df[col].astype(object).where(df[col].notna(), None)
+            out[col] = df[col].astype(object).where(df[col].notna(), MISSING_TOKEN).astype(str)
 
         # --- engineered features -------------------------------------------------------
         money = df[["DirectFinancialLossGBP", "LostIncomeGBP", "AdditionalCostsGBP"]]
@@ -128,6 +132,8 @@ class FeatureEngineer(BaseEstimator, TransformerMixin):
         return out
 
     def get_feature_names_out(self, input_features=None):
+        if not hasattr(self, "feature_names_out_"):
+            return np.asarray(numeric_feature_names(self.exclude_internal_scores) + C.NOMINAL_COLUMNS)
         return self.feature_names_out_
 
 
@@ -144,14 +150,27 @@ def numeric_feature_names(exclude_internal_scores: bool = False) -> list[str]:
 
 
 def build_preprocessor(exclude_internal_scores: bool = False) -> Pipeline:
-    """FeatureEngineer -> (median impute + missing indicators | one-hot)."""
+    """FeatureEngineer -> (median impute | missing indicators | one-hot with dictionary categories).
+
+    One-hot categories are fixed from the data dictionary rather than learned from the data, so the
+    output columns are identical for every training fold and at inference, and a value outside the
+    dictionary maps to an all-zero row instead of shifting columns.
+    """
     numeric = numeric_feature_names(exclude_internal_scores)
     column_transformer = ColumnTransformer(
         transformers=[
-            ("num", SimpleImputer(strategy="median", add_indicator=True), numeric),
+            ("num", SimpleImputer(strategy="median"), numeric),
+            # One indicator per numeric column, whether or not it was missing in the training data,
+            # so the column set is identical across folds and at inference.
+            ("missing", MissingIndicator(features="all", sparse=False), numeric),
             (
                 "cat",
-                OneHotEncoder(handle_unknown="ignore", sparse_output=False, dtype=np.float64),
+                OneHotEncoder(
+                    categories=[NOMINAL_LEVELS[c] + [MISSING_TOKEN] for c in C.NOMINAL_COLUMNS],
+                    handle_unknown="ignore",
+                    sparse_output=False,
+                    dtype=np.float64,
+                ),
                 C.NOMINAL_COLUMNS,
             ),
         ],

@@ -20,7 +20,7 @@ solution is built around that asymmetry rather than around raw accuracy.
 | Holdback predictions | `predictions/holdback_predictions.csv` |
 | README | this file |
 | Requirements | `requirements.txt` (pinned to the versions used to produce the committed outputs) |
-| Tests | `tests/` (18 tests, `make test`) |
+| Tests | `tests/` (26 tests, `make test`) |
 | Trained model + metrics | `models/severity_model.joblib`, `models/metrics.json`, `models/model_card.json` |
 | Data | `data/` (the original workbook plus CSV exports of both sheets) |
 
@@ -35,9 +35,11 @@ solution is built around that asymmetry rather than around raw accuracy.
 | `TriageDecision` | `Progress` / `Do not progress` (always consistent with the score) |
 | `ProbabilitySevere` | model probability that the true score is 4-6 |
 | `P_Severity1` … `P_Severity6` | full class probabilities |
-| `TopDrivers` | the three features that pushed this case most towards or away from "severe" (SHAP) |
+| `TopDrivers` | the three features that pushed this case most towards or away from "severe" (SHAP), with their observed values; an imputed value is shown as `missing` |
 
 ## Quick start
+
+Requires Python 3.11 or later.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -83,7 +85,10 @@ The data dictionary in the assessment workbook is treated as the contract and is
 
 * Ordered categoricals (impact levels, vulnerability, evidence strength, remedy band, age band,
   investigation route) are encoded as integers so the ordering is preserved.
-* Nominal categoricals are one-hot encoded with unknown-safe handling.
+* Nominal categoricals are one-hot encoded with the category list fixed from the data dictionary plus
+  an explicit `Missing` level, and one missing-value indicator exists for every numeric column, so the
+  feature set is identical in every cross-validation fold and at inference; an out-of-dictionary value
+  maps to an all-zero row rather than shifting columns.
 * Engineered features follow the brief's own list of severity factors: total financial loss and log
   transforms of heavy-tailed money and duration fields; `HealthImpactCount` across the six health
   flags; `MaxImpactLevel` and a `VulnerabilityXImpact` interaction; mean and gap of the two internal
@@ -106,24 +111,38 @@ The data dictionary in the assessment workbook is treated as the contract and is
 
 ### 4. Results (5-fold out-of-fold, 2,000 training cases)
 
-| | Logistic baseline | LightGBM, argmax rule | **LightGBM, business rule (τ = 0.05)** |
-|---|---|---|---|
-| Severe-case recall | 0.92 | 0.92 | **0.98** |
-| Missed severe cases | 51 | 50 | **14** |
-| Unnecessary investigations | 69 | 40 | 115 |
-| Progress rate (true base rate 30%) | 31% | 30% | 35% |
-| Exact-score accuracy | 0.74 | 0.80 | 0.78 |
-| Within one point | 0.994 | 0.998 | 0.996 |
-| Macro F1 | 0.72 | 0.79 | 0.78 |
-| Quadratic weighted kappa | 0.94 | 0.95 | 0.95 |
-| Severe AUROC | 0.99 | 0.99 | 0.99 |
+| | Logistic, argmax | Logistic, business rule (τ = 0.26) | LightGBM, argmax | **LightGBM, business rule (τ = 0.03)** |
+|---|---|---|---|---|
+| Severe-case recall | 0.92 | 0.98 | 0.92 | **0.98** |
+| Missed severe cases | 51 | 11 | 46 | **11** |
+| Unnecessary investigations | 69 | 130 | 40 | 130 |
+| Progress rate (true base rate 30%) | 31% | 36% | 30% | 36% |
+| Expected cost per case (FP units) | 0.16 | 0.09 | 0.14 | 0.09 |
+| Exact-score accuracy | 0.74 | 0.73 | 0.80 | 0.77 |
+| Within one point | 0.994 | 0.993 | 0.999 | 0.997 |
+| Macro F1 | 0.72 | 0.71 | 0.79 | 0.77 |
+| Quadratic weighted kappa | 0.94 | 0.94 | 0.95 | 0.95 |
+| Severe AUROC | 0.99 | 0.99 | 0.99 | 0.99 |
 
-The business rule trades two points of exact accuracy for a 72% reduction in missed severe cases;
-the errors that remain are almost all one point off, and all 14 misses are true 4s whose internal
-assessments look like a typical 3.
+Two honest readings of this table:
+
+* **The decision rule matters more than the model.** Under the same cost-minimising rule the logistic
+  baseline and LightGBM reach the same triage outcome (11 missed, 130 unnecessary investigations).
+  For the binary progress decision alone the simpler model would do.
+* **LightGBM earns its place on the score itself**, which the prediction file has to report: six
+  points more exact-score accuracy and a lower MAE, plus per-class SHAP explanations.
+
+The business rule trades 2.5 points of LightGBM's exact accuracy for a 76% reduction in missed severe
+cases (46 → 11); the errors that remain are almost all one point off, and all 11 misses are true 4s
+whose internal assessments look like a typical 3.
+
+τ is chosen on out-of-fold predictions and reported on the same predictions, which is mildly
+optimistic: a nested check (choose τ on four fifths, evaluate on the fifth, 20 splits) gives mean
+severe recall 0.97 against 0.98 reported, and the chosen τ ranges 0.03-0.13 across splits. The exact
+value is not sharply identified by 2,000 cases; that it belongs far below 0.5 is.
 
 **Ablation.** Without the four internal assessment fields (`EstimatedImpactScore`,
-`EstimatedRiskScore`, `ExpectedFinancialRedressGBP`, `PredictedRemedyBand`) accuracy falls to 0.46 and
+`EstimatedRiskScore`, `ExpectedFinancialRedressGBP`, `PredictedRemedyBand`) accuracy falls to 0.45 and
 severe AUROC to 0.91. The model depends heavily on those upstream assessments; see assumptions.
 
 ### 5. Explainability (`explain.py`)
@@ -137,11 +156,11 @@ plots; figures are in `reports/figures/`.
 ### 6. Business risk
 
 * The threshold curve and a cost-ratio sensitivity table are in the notebook (section 5). With the 95%
-  recall floor, any ratio up to 3:1 selects τ ≈ 0.22 (28 misses, 32% progressed); 5:1 or steeper
-  selects τ ≤ 0.05 (≤ 14 misses, 35-40% progressed). The choice is a one-line config change
-  (`BusinessCosts` in `config.py` or `--fn-cost/--fp-cost` on the CLI).
-* Cases with `P(severe)` between 0.02 and τ are 2.5% of the data but hold 6 of the 14 misses: a
-  natural human-review band rather than automatic closure.
+  recall floor, ratios of 1:1 and 2:1 select τ = 0.21 (29 misses, 32% progressed), 3:1 selects 0.13
+  (25 misses, 33%), and 5:1 or steeper selects τ ≤ 0.03 (≤ 11 misses, 36-40% progressed). The choice
+  is a one-line config change (`BusinessCosts` in `config.py` or `--fn-cost/--fp-cost` on the CLI).
+* Out of fold, cases with `P(severe)` between 0.01 and τ are 3.6% of the data but hold 6 of the 11
+  misses: a natural human-review band rather than automatic closure.
 * A drift check (KS / chi-square per feature) finds no shift between the training and holdback data,
   so the cross-validated figures are a fair expectation for the holdback predictions.
 
@@ -160,14 +179,19 @@ plots; figures are in `reports/figures/`.
 
 ## Production readiness
 
-* **Single code path.** Cleaning, features and model live in one saved sklearn pipeline
-  (`SeverityModel`); the notebook, CLI and Docker image all call the same functions.
+* **Single code path.** Cleaning is one deterministic, dictionary-driven function; features and model
+  live in one saved sklearn pipeline (`SeverityModel`). The notebook, CLI and Docker image all call
+  the same two.
 * **Reproducibility.** Fixed seeds, single-threaded LightGBM, pinned requirements, `make all`.
-* **Model card.** `models/model_card.json` records the git SHA, training-data hash, library versions,
-  configuration, data-quality report and cross-validated metrics of the committed model.
+* **Model card.** `models/model_card.json` records the git SHA of the code the model was trained
+  with (suffixed `-dirty` if the tree had uncommitted changes), the training-data hash, library
+  versions, configuration, data-quality report and cross-validated metrics.
 * **Input validation and monitoring hooks.** Every scoring run writes a `*.quality.json` alongside the
-  predictions (missing columns, out-of-range counts, unknown categories, inferred values). A rise in
-  these, or a move in the progress rate, is the first signal that the input process has changed.
+  predictions (missing columns, out-of-range counts, unknown categories, inferred values). Duplicate
+  or missing case references are rejected. A rise in these counts, or a move in the progress rate, is
+  the first signal that the input process has changed.
+* **Fail safe.** A case whose probabilities cannot be computed is progressed, never closed
+  automatically.
 * **Tests.** Cleaning rules, feature determinism, the decision layer's consistency guarantees,
   threshold selection and prediction schema are covered by `pytest`.
 * **Suggested operating model.** Automatic closure only well below τ; a human-review band just below τ;
@@ -180,6 +204,8 @@ plots; figures are in `reports/figures/`.
 * Probabilities are not calibrated (balanced class weights inflate severe probabilities); τ is tuned
   on the same out-of-fold probabilities so the decision is unaffected, but a calibrated `P(severe)`
   would be easier to communicate. Isotonic calibration on a held-out fold is the natural next step.
+* The threshold is selected and reported on the same out-of-fold predictions (see results); with more
+  data, select it on a separate validation split.
 * A formal ordinal objective or conformal prediction intervals would give each case a guaranteed
   score range rather than a point estimate.
 * A fairness audit across `AgeBand` and `PrimaryVulnerability` on realised outcomes should precede any

@@ -51,7 +51,10 @@ def load_raw(path: str | Path) -> pd.DataFrame:
 
 
 def _to_bool(series: pd.Series) -> tuple[pd.Series, int]:
-    mapping = {"yes": True, "no": False, "true": True, "false": False, "1": True, "0": False}
+    mapping = {
+        "yes": True, "no": False, "true": True, "false": False,
+        "1": True, "0": False, "1.0": True, "0.0": False, "y": True, "n": False,
+    }
     norm = series.astype("string").str.strip().str.lower()
     out = norm.map(mapping)
     n_invalid = int((out.isna() & series.notna()).sum())
@@ -91,7 +94,11 @@ def clean(df: pd.DataFrame, *, is_training: bool = False) -> tuple[pd.DataFrame,
 
     report.duplicate_references = int(df[C.ID_COLUMN].duplicated().sum())
     if report.duplicate_references:
-        log.warning("%d duplicate CaseReference values", report.duplicate_references)
+        raise ValueError(
+            f"{report.duplicate_references} duplicate {C.ID_COLUMN} values; case references must be unique"
+        )
+    if df[C.ID_COLUMN].isna().any():
+        raise ValueError(f"{C.ID_COLUMN} contains missing values")
 
     # Booleans
     for col in C.BOOLEAN_COLUMNS:
@@ -117,7 +124,7 @@ def clean(df: pd.DataFrame, *, is_training: bool = False) -> tuple[pd.DataFrame,
         df[col], n_bad = _validate_categories(df[col], levels)
         if n_bad:
             report.invalid_categories[col] = n_bad
-    nominal_levels = _nominal_levels()
+    nominal_levels = NOMINAL_LEVELS
     for col in C.NOMINAL_COLUMNS:
         df[col], n_bad = _validate_categories(df[col], nominal_levels[col])
         if n_bad:
@@ -205,6 +212,9 @@ def _nominal_levels() -> dict[str, list[str]]:
             "Justice",
         ],
     }
+
+
+NOMINAL_LEVELS: dict[str, list[str]] = _nominal_levels()
 
 
 def load_and_clean(path: str | Path, *, is_training: bool) -> tuple[pd.DataFrame, DataQualityReport]:

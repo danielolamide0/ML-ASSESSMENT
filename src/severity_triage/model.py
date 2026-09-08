@@ -57,9 +57,10 @@ def decode_scores(proba: np.ndarray, threshold: float) -> tuple[np.ndarray, np.n
     output file is always consistent with the decision it drives. Using a threshold below 0.5
     is how the low tolerance for missed severe cases is encoded.
     """
-    proba = np.asarray(proba)
+    proba = np.asarray(proba, dtype=float)
     p_severe = severe_probability(proba)
-    progress = p_severe >= threshold
+    # Fail safe: a row whose probabilities are undefined is progressed, never closed automatically.
+    progress = ~(p_severe < threshold)
     low_band = proba[:, :SEVERE_START_INDEX].argmax(axis=1) + C.SEVERITY_CLASSES[0]
     high_band = proba[:, SEVERE_START_INDEX:].argmax(axis=1) + C.PROGRESS_THRESHOLD_SCORE
     score = np.where(progress, high_band, low_band)
