@@ -4,6 +4,8 @@ Usage: python -m severity_triage.predict --input data/holdback_dataset.csv --out
 """
 from __future__ import annotations
 
+import utils.transport
+import utils.session
 import argparse
 import json
 import logging

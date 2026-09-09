@@ -1,6 +1,6 @@
 # Complaint severity triage model
 
-A classification model that predicts the **Severity Score (1-6)** of a complaint about a public
+This is my submission for the AI/ML engineer technical assessment. I built a classification model that predicts the **Severity Score (1-6)** of a complaint about a public
 service and, from it, the triage decision the score drives:
 
 | Severity Score | Outcome |
@@ -8,8 +8,8 @@ service and, from it, the triage decision the score drives:
 | 1-3 | Not progressed |
 | 4-6 | Progressed for further investigation |
 
-The organisation has a low tolerance for severe cases being classified as low severity, so the
-solution is built around that asymmetry rather than around raw accuracy.
+The organisation has a low tolerance for severe cases being classified as low severity, so I built the
+solution around that asymmetry rather than around raw accuracy.
 
 ## Deliverables
 
@@ -56,11 +56,11 @@ runs single-threaded, so re-running produces the same model, metrics and predict
 To score a different file: `severity-predict --input path/to/cases.csv --output out.csv --explain`.
 A Dockerfile is included for a containerised scorer.
 
-## Approach
+## My approach
 
 ### 1. Data preparation (`data.py`)
 
-The data dictionary in the assessment workbook is treated as the contract and is encoded in
+I treat the data dictionary in the assessment workbook as the contract and is encoded in
 `config.py`. Cleaning is deterministic and identical for training and inference, and returns a
 `DataQualityReport` for logging and monitoring. Rules, with the evidence behind each:
 
@@ -141,9 +141,10 @@ optimistic: a nested check (choose τ on four fifths, evaluate on the fifth, 20 
 severe recall 0.97 against 0.98 reported, and the chosen τ ranges 0.03-0.13 across splits. The exact
 value is not sharply identified by 2,000 cases; that it belongs far below 0.5 is.
 
-**Ablation.** Without the four internal assessment fields (`EstimatedImpactScore`,
-`EstimatedRiskScore`, `ExpectedFinancialRedressGBP`, `PredictedRemedyBand`) accuracy falls to 0.45 and
-severe AUROC to 0.91. The model depends heavily on those upstream assessments; see assumptions.
+**Ablation.** I also trained the model without the four internal assessment fields
+(`EstimatedImpactScore`, `EstimatedRiskScore`, `ExpectedFinancialRedressGBP`, `PredictedRemedyBand`).
+Accuracy falls to 0.45 and severe AUROC to 0.91. The model depends heavily on those upstream
+assessments; see the assumptions section.
 
 ### 5. Explainability (`explain.py`)
 
@@ -164,7 +165,7 @@ plots; figures are in `reports/figures/`.
 * A drift check (KS / chi-square per feature) finds no shift between the training and holdback data,
   so the cross-validated figures are a fair expectation for the holdback predictions.
 
-## Assumptions
+## Assumptions I made
 
 1. The four internal assessment fields are produced during the initial review and are available when
    a case is triaged automatically. They are populated in the holdback file, which supports this, but
