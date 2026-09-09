@@ -98,7 +98,7 @@ def threshold_curve(y_true, proba, costs: C.BusinessCosts = C.BusinessCosts(), g
 def choose_threshold(y_true, proba, costs: C.BusinessCosts = C.BusinessCosts(), min_severe_recall: float = 0.95) -> tuple[float, pd.DataFrame]:
     """Pick the threshold that minimises expected business cost, subject to a recall floor.
 
-    Among thresholds meeting the recall floor we pick the one with the lowest cost; if several
+    Among thresholds meeting the recall floor I pick the one with the lowest cost; if several
     tie, the highest threshold (fewest unnecessary investigations). If nothing meets the floor,
     fall back to the threshold with the highest recall.
     """
